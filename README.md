@@ -88,7 +88,7 @@ Changes to be committed:
 Since we told git to track changes to README.md (which also includes keeping track of whether it exists or not),
 we are now being told that if we commit the current "staged changes", this commit will contain the creation of the file *README.md*
 
-So what would happen if I now modify the file? Let's find out:
+So what would happen if we now modify the file? Let's find out:
 
 ```
 echo "blabla" >> README.md
@@ -113,17 +113,17 @@ Changes not staged for commit:
 
 So if we commit the current state, what would be committed?
 Only those changes we have told git to keep track of would be committed.
-So if we commit the current 'staged changes' and check out that commit at a later point, the contents of README.md at that particular point in time, we would get the version of README.md that only contains one line of text.
+
+This would mean only the current 'staged changes' would be added, and were we to check out this commit at a later point, the contents of README.md at that particular point in time, would be the version of README.md that only contains one line of text.
 Let's do just that:
 ```
-$git commit -m 'commit message'
+$git commit -m 'added README file'
 ```
 Funny thing about git - comments are actually enforced.
 You cannot commit anything without leaving a 'commit message' about what was changed in that particular commit.
 Unfortunately you often see a lot of '.' commit messages, but best practice is to make them concise (one-liners) giving an idea of what was modified, without being a full documentation of the actual change - think of it as a search index.
 
-Back to the point of how *git* handles 
-To check out whether this is true or not, let's try out another handy git command:
+To check out whether what I claimed above is true, let's try out another handy git command:
 
 ```
 $ git stash
@@ -137,8 +137,8 @@ nothing to commit, working tree clean
 
 Now what is this suppose to mean?
 What *git* just did, was to *stash* away our unclean state (whatever happens between commits).
-What am I looking at now then?
-You are looking at the state of the repository as of last commit. You can now jump to any other commit (e.g. another branch) and have a look around, start committing stuff there, before jumping back to the point from which we stashed the changes just now.
+What are we looking at now then?
+We are looking at the state of the repository as of last commit. We can now jump to any other commit (e.g. another branch) and have a look around, start committing stuff there, before jumping back to our *stashed* away state.
 
 ```
 $ cat README.md
