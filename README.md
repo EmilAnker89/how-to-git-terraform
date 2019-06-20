@@ -5,8 +5,7 @@
 Start by making a directory for the repository somewhere and change to that directory:
 
 ```
-mkdir path/to/repo/name-of-repo
-cd path/to/repo/name-of-repo
+mkdir path/to/repo/name-of-repo && cd path/to/repo/name-of-repo
 ``` 
 
 Initialize a new git repository with
