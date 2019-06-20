@@ -127,7 +127,48 @@ To check out whether this is true or not, let's try out another handy git comman
 
 ```
 $ git stash
-Saved working directory and index state WIP on master: 55c4fe
+Saved working directory and index state WIP on master: 55c4fe commit message
+HEAD is now at 55c4fe commit message
+
+$ git status
+On branch master
+nothing to commit, working tree clean
+```
+
+Now what is this suppose to mean?
+What *git* just did, was to *stash* away our unclean state (whatever happens between commits).
+What am I looking at now then?
+You are looking at the state of the repository as of last commit. You can now jump to any other commit (e.g. another branch) and have a look around, start committing stuff there, before jumping back to the point from which we stashed the changes just now.
+
+```
+$ cat README.md
+contents of README file
+
+$ git stash list
+stash@{0}: WIP on master: 55c4fe commit message
+
+$ git stash apply 0
+(...)
+
+$ cat README.md
+contents of README file
+blabla
+```
+
+It is very typical in software development to work on several different 'branches' of the same code-base.
+branches are use for a variety of workflows, but a very common pattern is branching out each time you implement a new feature (which doesn't concern others than those working on coding that particular feature - until it is finished).
+You will find yourself jumping back and forth between branches - when doing this the actual contents of the directory you are working in will be modified by git. For that reason it is very useful to be able to stash away a 'messy' state without committing it.
+But keep in mind that this is for your local repository only - only commits are synced against remote repositories.
+
+Let's say we are happy with the current changes and add the changes to README.md to a second commit.
+Notice the little shortcut:
+```
+$ git commit -am 'second commit'
+
+
+```
+
+
 
 
 
