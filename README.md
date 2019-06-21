@@ -165,11 +165,93 @@ Notice the little shortcut:
 ```
 $ git commit -am 'second commit'
 
-
 ```
 
+Work as a team:
+Typically you'd just go to the github.com website and create an empty repo:
+Just because it is easy, let's call it the same thing as the directory we just created.
+the path would be something like https://github.com/username/reponame.git
+
+```
+$ git remote add origin https://github.com/<username>/<reponame>.git
+$ git push -u origin master
+```
+Now we have pushed the state of our local git repo to a remote repository, that others can now work with.
+What they would do to download this state would be to run:
+```
+$ git clone https://github.com/<username>/<reponame> path/to/download/to/reponame
+```
+
+This operation is only done once, since you do not want to clone/pull the entire history of the repository every time you have to sync with the remote state.
+As per construction, the history of a git repository rarely changes - and typically not a big chunk of the history.
+Hence, you would typically just like to pull the changes to the remote repository since the last time you synced.
+To illustrate how this is different from cloning, let's take a look at the following chunk of code:
 
 
+```
+$ cd path/to/repo/name-of-repo
+$ echo "tmp" > tmp.txt
+$ git commit -am "added tmpfile"
+$ git push
+
+$ cd path/to/download/name-of-repo
+$ git fetch
+$ git status
+$ git pull
+
+```
+Assuming we've downloaded the state of our remote repository to *path/to/download/name-of-repo*,
+we currently have the repository in two different locations.
+Using the original repository in *path/to/repo/name-of-repo* we've added a new file called tmp.txt and pushed that change to our remote repository.
+
+Changing to the recently cloned repository at *path/to/download/name-of-repo*, running a git fetch will show us how our state differs from the remote.
+(we should be 1 commit behind remote)
+`git fetch` doesn't actually merge the remote state with the current local one.
+It is frequently used to check if there are and what changes have been made to the remote repository since the last sync.
+`git pull` on the other hand actually merges the states - so make sure that your local state is clean when doing `git pull`.
 
 
+It isn't very convenient to have the remote state changing all the time. We might even be working on something that will introduce broken changes or unfinished features, that we do not want others to experience before we are done implementing them.
+How does git accommodate this?
+git has the concept of branches. We haven't touched on it till now, but you have seen the reference to *master* quite a few times already.
+This is the default branch of a git repository. The latest state of *master* is supposed to be working version of the code.
+What is typically deployed to a real environment is typically based on processes tracking the *master* branch.
+
+But to efficiently work as a team, it would quickly prove troublesome or at least tedious to only work against this one branch.
+This is where the concept of branching helps out. We can introduce new features and even temporary breaking changes, 
+without messing up the *master* branch. When we are done developing our new feature, the process of applying those changes to our master branch as well, is done in the form of a *merge*.
+This attempts to merge the changes from one branch into another - this is in itself a commit (called a merge commit), that is used to handle possible conflicts between the two states.
+There are other ways of merging branches, but this should be your go-to, because it explicitly asks you to determine how to branches should be merged together.
+
+A new branch is always initiated from a tracked state of the repository (typically the current state of the master branch).
+
+```
+$ git branch feature/new_feature
+$ git checkout feature/new_feature
+(or git checkout -b feature/new_feature as a one-liner)
+```
+A new branch is created with the `git branch [old-branch] new-branch` command.
+If no old-branch is supplied, it branches out from the current branch, which means the above is equivalent to `git branch master feature/new_feature`
+`git checkout` is the command used to navigate in the history of the git repository.
+If you specify a branch, it will change the repository to look like the most recent commit of the current branch (which in this case is the branch we just created)
+It is also what you'd use to checkout a specific point in the git history (a specific commit hash value or tag)
+
+```
+$ echo "123" > tmp.txt
+$ git commit -am "feature/new_feature content"
+
+$ git push -u origin feature/new_feature
+$ git pull
+
+$ git merge feature/new_feature master
+
+```
+The code chunk above commits a simple change to tmp.txt and pushes this to the remote storage.
+This is also what makes the branch visible to others tracking the remote repository.
+What might not be obvious is why you'd do a `git pull` before merging the feature-branch changes into master.
+As with any merge
+
+
+I dislike rebase - it rewrites the history.
+It might look cleaner, but if you don't know what you are doing, or mess something up, you could have ruined the repository completely.
 
