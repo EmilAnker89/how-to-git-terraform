@@ -165,11 +165,44 @@ Notice the little shortcut:
 ```
 $ git commit -am 'second commit'
 
-
 ```
 
+Work as a team:
+Typically you'd just go to the github.com website and create an empty repo:
+Just because it is easy, let's call it the same thing as the directory we just created.
+the path would be something like https://github.com/username/reponame.git
+
+```
+$ git remote add origin https://github.com/<username>/<reponame>.git
+$ git push -u origin master
+```
+Now we have pushed the state of our local git repo to a remote repository, that others can now work with.
+What they would do to download this state would be to run:
+```
+$ git clone https://github.com/<username>/<reponame> path/to/download/to/reponame
+```
+
+```
+$ cd path/to/repo/name-of-repo
+$ echo "tmp" > tmp.txt
+$ git commit -am "added tmpfile"
+$ git push
+
+$ cd path/to/download/to/reponame
+$ git fetch
+$ git status
+$ git pull
+
+$ git branch feature/new_feature
+$ git checkout feature/new_feature
+(or git checkout -b feature/new_feature)
+
+$ git push -u origin feature/tmp
+
+$ git merge feature/tmp master
 
 
-
-
+```
+I dislike rebase - it rewrites the history.
+It might look cleaner, but if you don't know what you are doing, or mess something up, you could have ruined the repository completely.
 
