@@ -12,12 +12,14 @@ mkdir path/to/repo/name-of-repo && cd path/to/repo/name-of-repo
 ``` 
 
 Initialize a new git repository with
+
 ```
 git init
 ```
 
 This will create a directory called *.git* in the current directory, which contains the state of your local git repository.
 check out:
+
 ```
 $ ls -al .git
 
@@ -210,19 +212,17 @@ Changing to the recently cloned repository at *path/to/download/name-of-repo*, r
 It is frequently used to check if there are and what changes have been made to the remote repository since the last sync.
 `git pull` on the other hand actually merges the states - so make sure that your local state is clean when doing `git pull`.
 
-
+### Branching
 It isn't very convenient to have the remote state changing all the time. We might even be working on something that will introduce broken changes or unfinished features, that we do not want others to experience before we are done implementing them.
 How does git accommodate this?
-git has the concept of branches. We haven't touched on it till now, but you have seen the reference to *master* quite a few times already.
-This is the default branch of a git repository. The latest state of *master* is supposed to be working version of the code.
-What is typically deployed to a real environment is typically based on processes tracking the *master* branch.
+git has the concept of branches. We haven't touched on it until now, but you have seen the reference to *master* quite a few times already.
+This is the default branch of a git repository (created when you ran -git init-). The latest state of *master* is typically expected to contain a working version of the code.
+What is deployed to a *real* environment is typically based on processes tracking the *master* branch.
+But just to be clear, the *master* branch doesn't have any special status in itself - it is merely the branch created by default.
 
-But to efficiently work as a team, it would quickly prove troublesome or at least tedious to only work against this one branch.
+To efficiently work as a team, it would quickly prove troublesome or at least tedious to only work against this one branch.
 This is where the concept of branching helps out. We can introduce new features and even temporary breaking changes, 
-without messing up the *master* branch. When we are done developing our new feature, the process of applying those changes to our master branch as well, is done in the form of a *merge*.
-This attempts to merge the changes from one branch into another - this is in itself a commit (called a merge commit), that is used to handle possible conflicts between the two states.
-There are other ways of merging branches, but this should be your go-to, because it explicitly asks you to determine how to branches should be merged together.
-
+without messing up the *master* branch. 
 A new branch is always initiated from a tracked state of the repository (typically the current state of the master branch).
 
 ```
@@ -230,11 +230,19 @@ $ git branch feature/new_feature
 $ git checkout feature/new_feature
 (or git checkout -b feature/new_feature as a one-liner)
 ```
+
 A new branch is created with the `git branch [old-branch] new-branch` command.
-If no old-branch is supplied, it branches out from the current branch, which means the above is equivalent to `git branch master feature/new_feature`
+If no *old-branch* is supplied, it branches out from the current branch (checked out commit to be exact), which means the above is equivalent to `git branch master feature/new_feature`
 `git checkout` is the command used to navigate in the history of the git repository.
 If you specify a branch, it will change the repository to look like the most recent commit of the current branch (which in this case is the branch we just created)
 It is also what you'd use to checkout a specific point in the git history (a specific commit hash value or tag)
+
+When we are done developing our new feature, the process of applying those changes to our master branch as well, is done in the form of a *merge*.
+This attempts to merge the changes from one git branch into another - this is in itself a commit (called a merge commit), that is used to handle possible conflicts between the two states.
+There are other ways of merging branches, but this should be your go-to, because it explicitly asks you to determine how to branches should be merged together.
+
+When a branch is ready to be merged, it is typically merged with the branch it was initiated from.
+
 
 ```
 $ echo "123" > tmp.txt
@@ -249,9 +257,17 @@ $ git merge feature/new_feature master
 The code chunk above commits a simple change to tmp.txt and pushes this to the remote storage.
 This is also what makes the branch visible to others tracking the remote repository.
 What might not be obvious is why you'd do a `git pull` before merging the feature-branch changes into master.
-As with any merge
 
 
-I dislike rebase - it rewrites the history.
-It might look cleaner, but if you don't know what you are doing, or mess something up, you could have ruined the repository completely.
+A common practice when working with branches, is rebasing before a merge.
+Without getting practical, the idea is when working with a seperate branch, you tend to have slightly messy commits
+You commit to track your changes and maneuver around in the branch's commits while developing that particular feature,
+but when you are ready to introduce it to the master branch, you might want to tidy up those commits - bundle up file changes differently,
+maybe even just bundle the entire feature addition into one commit (very often done for pull requests as we'll get to in a bit).
+
+*rebase*
+careful when changing git history!
+
+*pull request*
+
 
