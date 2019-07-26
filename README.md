@@ -243,7 +243,6 @@ There are other ways of merging branches, but this should be your go-to, because
 
 When a branch is ready to be merged, it is typically merged with the branch it was initiated from.
 
-
 ```
 $ echo "123" > tmp.txt
 $ git commit -am "feature/new_feature content"
@@ -260,14 +259,35 @@ What might not be obvious is why you'd do a `git pull` before merging the featur
 
 
 A common practice when working with branches, is rebasing before a merge.
-Without getting practical, the idea is when working with a seperate branch, you tend to have slightly messy commits
+Without getting practical, the idea is when working with a separate branch, you tend to have slightly messy commits
 You commit to track your changes and maneuver around in the branch's commits while developing that particular feature,
 but when you are ready to introduce it to the master branch, you might want to tidy up those commits - bundle up file changes differently,
 maybe even just bundle the entire feature addition into one commit (very often done for pull requests as we'll get to in a bit).
 
-*rebase*
-careful when changing git history!
+As a rule of thumb though, never change the history of the master branch, unless strictly necessary.
 
-*pull request*
+***
+### Terraform
+Terraform consists of a piece of software and a language for provisioning infrastructure.
+_link to description of terraform architecture, etc._
+
+Let's walk through the components of a typical Terraform project:
+
+```
+.
+│   README.md
+|    
+└───project
+|   |   main.tf
+|   |   variables.tf
+|   |   output.tf
+|   |   terraform.tfvars
+|
+|___modules
+    |   main.tf
+    |   variables.tf
+    |   output.tf 
+  
+```
 
 
