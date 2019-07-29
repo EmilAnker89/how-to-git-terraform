@@ -269,9 +269,138 @@ As a rule of thumb though, never change the history of the master branch, unless
 ***
 ### Terraform
 Terraform consists of a piece of software and a language for provisioning infrastructure.
+It consists of a piece of software called Terraform and a declarative language called Hashicorp Configuration Language (HCL)
+What Terraform does is provide a way in which to talk to different infrastructure providers using the same configuration language.
+Several providers have implemented abstractions on top of their APIs in Terraform to have an easy interface for interacting with the 
+provisioning services of that particular infrastructure provider.  
+It is (typically) not necessary to strictly declare dependencies between components in Terraform, as this is implicitly done by reference.
+Terraform can figure this out, because it generates and walks a Directed Acyclig Graph (DAG) during it's planning phase, 
+meaning it will construct a graph of dependencies and based on this graph determine what has to be provisioned first, 
+what can be provisioned in parallel and what is an invalid configuration (e.g. circular dependencies)
+The last characteristic worth highlighting is the Terraform state. It can cause a lot of trouble but also seems like a necessary evil.
+This state keeps track of what has been deployed by Terraform. It can be compared to either current state (has something in these resources been changed by something that isn't Terraform)
+and during the planning phase - since we can compare what the latest Terraform deployment looks like, we don't need to figure out how to get from nothing to our new desired state -
+if possible we can take a shortcut and reuse some of our existing components. If at all possible, we'd much rather modify existing components than redeploy them from scratch, 
+but to do this properly, you need a tool like Terraform.
+This is the best of two worlds - one in which you have everything described to achieve a certain state in one file/process (desired state configuration)
+and you get to reuse existing components instead of having to redeploy.
+For a more in-depth description of the Terraform architecture and components, see:
 _link to description of terraform architecture, etc._
 
-Let's walk through the components of a typical Terraform project:
+
+Let's walk through the components of a very basic Terraform project:
+
+```
+.
+│   README.md
+|    
+└───project
+    |   main.tf
+    |   variables.tf
+    |   terraform.tfvars
+  
+```
+
+It can be a bit intimidating to see so many different files to describe a project, 
+but it is really just a way to separate configuration of the different parts of a project.
+a "project" is a collection of files in a certain location.
+Terraform is very dependent on and strict about the repository structure, since it actually attempts to merge all files with 
+suffix *.tf. in the directory in which you execute `terraform plan`.  
+A very typical naming convention for files in a terraform project is:
+main.tf, variables.tf, output.tf
+main.tf contains the core functionality.
+this will be declaration of resource and data objects (we'll dive into this in a bit), 
+the references to the providers and backends (if state is hosted remotely) is also typically specified here.
+variables.tf is like the schema definition of the Terraform project. This will typically just contain variable definitions.
+This is the file in which you determine how many knobs user can use to alter the behavior of the "deployment".
+You would also specify implicitly whether these variables are optional (because it has a default value) or mandatory.  
+terraform.tfvars is a specific file (also files matching *.auto.tfvars) that acts as the interface to the project.
+This is but ony way to supply variables to Terraform, but it is the most commonly used.
+So where variables.tf contained the declaration of specific variables, terraform.tfvars would contain the actual values of those variables.
+This is the least static part of the Terraform project - if you have to alter something in main.tf often, it is probably worth specifying
+a variable to handle this and set it's value in terraform.tfvars, making the interface as slim as possible.
+Later on we'll cover different other ways of passing variables to Terraform and how Terraform handles inputs from different sources.
+
+But let us first take a look at a simple main.tf file (project1/main.tf):
+
+let's take a look at the main.tf file:
+[main.tf](project1/main.tf)  
+This tiny bit of code does nothing more than state the provider (which in this case is the Azure Resource Manager - _azurerm_)
+and defines a resource group to be created.
+For documentation about the interface of azurerm_resource_group:
+https://www.terraform.io/docs/providers/azurerm/r/resource_group.html  
+This resource type is an abstraction in the form of a wrapper around (some of) the `az group *` commands in the azure cli.
+
+
+[variables.tf](project1/variables.tf)  
+the var.* references in main.tf are defined in this file. As mentioned before, there really isn't any reason (from a functionality point of view)
+to separate main.tf and variables.tf into two files, but it is a nice way to separate different types of definitions.
+
+[terraform.tfvars](project1/terraform.tfvars)  
+contains a simple assignment. The syntax is the subset of HCL that relates to data structures.
+You can only define data structures that are valid in HCL.
+for information on variable types see: https://www.terraform.io/docs/configuration/variables.html
+
+***
+### first Terraform deployment
+The contents of _project1_ would let you deploy a resource group on Azure.
+
+Please beware that Terraform will use the current Azure session information for the deployment (unless otherwise specified),
+so make sure that your current session is attached to a subscription in which you are allowed to and can deploy resources.
+This information is inherited from the parent process of Terraform.
+
+`az login -u <username> -p <password>`  
+And typically you'd specify the subscription context in the parent process rather than in Terraform:
+`az account set --subscription <subsription>`
+
+Initialization of a Terraform project is a separate step, which is responsible for defining Terraform's dependencies.
+This would mainly consist of plugins, backend configuration and modules.
+E.g. if you navigate to the _project1_ directory and execute `terraform init` nothing is actually deployed, but Terraform will fetch all dependencies
+to be able to deploy whatever is referenced in your configuration.
+In our case it will:
+ - initialize a backend (the statefile)
+ - download provider plugin for azurerm  
+ 
+Terraform aims to be as slim as possible, this is one of the reasons why the provider plugins do not ship with Terraform itself - you only fetch what you need, when you need it.
+This is true for modules as well (which we'll cover later on), making it possible to reference other HCL definitions (and specific versions of those).
+What this also means though, is that you have to rerun `terraform init` whenever you change a provider or backend block or the source in a module block has changed. 
+
+After initializing the Terraform project, you will notice a .terraform folder, which in our case contains the latest version of the azurerm plugin as an executable file in:
+_.terraform/plugins/<os-name>/terraform-provider-azurerm_v<XXX>_  
+Note that the statefile has not yet been created, since we haven't actually deployed anything. 
+implicitly however, (since there is no terraform.tfstate reference under .terraform) we now know that the statefile will be kept locally.
+
+The provisioning based on a Terraform configuration consists of the two steps; _plan_ and _apply_
+The _plan_ phase generates the graph based on the configuration in the *.tf files. It then traverses this graph to determine what has to be deployed in which order and what can be deployed in parallel.
+The _apply_ phase is then the actual execution of the plan.
+The _plan_ phase can be thought of as a way of determining whether the HCL declarations themselves are valid ("think compilation").
+Since Terraform doesn't know everything about the backends it talks to, you will get many error messages/warnings passed on from the backend services:
+e.g. field restrictions of various azure resources being an inconsistent pain in the a\*\*.  
+The main point is, the HCL code can make complete sense to Terraform, but because the backend services have various other restrictions that aren't surfaced through Terraform,
+you will not run into them before you try to actually use these services for deploying resources.
+So expect to get errors during _apply_ phases even when your _plan_ passed successfully.
+
+try running `terraform apply`. By default this actually runs both the plan and the apply phase in one (handy for interactive use).
+but it can also take a generated plan as an input.
+Without specifying any options for `terraform apply`, it will _wait_ at the stage where the plan is created and prompt the user to determine whether the actual _apply_ phase should be executed.
+
+As mentioned previously, there are different ways of supplying input to Terraform.
+One additional way is supplying them as -var or -var-file flags to the terraform commands.
+try something like: 
+```bash
+terraform plan -var "rg_name=my_test_res_group"
+```
+
+Because of the nature of resource groups in Azure, Terraform will tell you what needs to be changed to get from the current configuration to the desired configuration.
+In the case of a rename of a resource group in Azure, 1 resource needs to be _destroyed_ and 1 needs to be _added_.  
+This is because of Azure internals that do not allow for renaming of resource groups.
+
+But we don't have to remember to delete and then create the new resource group as we would if we were interacting with the *azure cli*.
+Terraform knows now that the resource group it used to manage the lifecycle of is now obsolete; thus it will destroy it for us.
+Also if someone accidentally deleted a resource Terraform was managing, it would compare its configuration to the current state and 
+let us know that there is a difference between the two. The next `terraform apply` we run, would then ask to be allowed to redeploy whatever is missing.
+
+
 
 ```
 .
@@ -289,5 +418,4 @@ Let's walk through the components of a typical Terraform project:
     |   output.tf 
   
 ```
-
 
