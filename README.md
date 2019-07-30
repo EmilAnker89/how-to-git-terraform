@@ -400,6 +400,23 @@ Terraform knows now that the resource group it used to manage the lifecycle of i
 Also if someone accidentally deleted a resource Terraform was managing, it would compare its configuration to the current state and 
 let us know that there is a difference between the two. The next `terraform apply` we run, would then ask to be allowed to redeploy whatever is missing.
 
+### Terraform state
+During the `terraform apply` phase, the state describing the current infrastructure is created or updated.
+In our example, where we didn't specify a specific backend for hosting this file, it will be generated locally in the directory of the Terraform project.
+Have a look at:
+```bash
+cat terraform.tfstate
+```
+As should be evident, this is a JSON structure describing exactly what was provisioned with all the relevant information about the objects created.
+Sadly it stores _everything_. and there is rarely an option to remove/mask or encrypt specific parts of the statefile.
+This can be a major risk, since all kinds of secrets will eventually find their way into these statefiles.
+The easiest way to have at least some sense of security working with such a file is never actually having it stored locally:
+This is one of the reasons for using a remote backend instead of the default local terraform.tfstate file.
+All backend providers for Terraform allow for encryption at rest, and if Terraform is using a remote backend for its statefile,
+it will never persist the file to disk - it will only ever keep the data structure in memory.
+This should be secure enough for most use cases - especially if you separate different environments into different terraform projects (statefiles),
+so you can manage access to the "secrets" of different environments independently.
+
 
 
 ```
